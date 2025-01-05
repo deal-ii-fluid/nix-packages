@@ -74,7 +74,7 @@ stdenv.mkDerivation rec {
     mkdir -p $out/{bin,lib}
 
     cp bin/ccx_preCICE $out/bin
-    cp bin/ccx_2.20.a $out/lib
+    cp bin/ccx_2.21.a $out/lib
   '';
 
   meta = {
