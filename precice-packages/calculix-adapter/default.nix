@@ -69,9 +69,22 @@ stdenv.mkDerivation rec {
     substituteInPlace Makefile --replace "mpifort" "${openmpi}/bin/mpifort"
   '';
 
+
+  # Instead of letting the Makefile guess, explicitly tell it which compilers to use.
+  makeFlags = [
+    # The C compiler
+    "CC=${stdenv.cc.cc}"
+    # The Fortran compiler
+    "FC=${gfortran}/bin/gfortran"
+    # If the Makefile uses MPIFC or F77, do the same
+    "MPIFC=${openmpi}/bin/mpifort"
+  ];
+
+
   # We can echo which compilers are actually being used, for debugging
   buildPhase = ''
-    echo "==== Debug: Using CC=${CC:-unset}, FC=${FC:-unset}, PATH=$PATH"
+	  echo "Build using CC=$CC FC=$FC MPIFC=$MPIFC PATH=$PATH"
+
     mpifort --version || true
     # Now run "make -j" with the relevant flags
     make -j \
