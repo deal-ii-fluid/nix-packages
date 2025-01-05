@@ -49,7 +49,7 @@ stdenv.mkDerivation rec {
   buildPhase = ''
     mpifort --version
     make -j \
-		  CC=gcc
+		  CC=clang
       CCX=${ccx}/ccx_2.20/src \
       SPOOLES_INCLUDE="-I${spooles}/include/spooles/" \
       ARPACK_INCLUDE="$(${pkg-config}/bin/pkg-config --cflags-only-I arpack lapack blas)" \
