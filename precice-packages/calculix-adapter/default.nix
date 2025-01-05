@@ -21,7 +21,7 @@ let
       "https://www.dhondt.de/ccx_2.21.src.tar.bz2"
       "https://web.archive.org/web/20240302101853if_/https://www.dhondt.de/ccx_2.21.src.tar.bz2"
     ];
-    hash = "sha256-bCmG+rcQDJrcwDci/WOAgjfbhy1vxdD+wnwRlt/ovKo=";
+    hash = "sha256-UqIO9yFsbi3nXq5GBTmRVkDjFA7EovYxqTAeAe2mBa0=";
   };
 in
 stdenv.mkDerivation rec {
