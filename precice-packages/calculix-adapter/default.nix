@@ -40,7 +40,7 @@ stdenv.mkDerivation rec {
   # Tools needed at build-time only
   nativeBuildInputs = [
     # The C/C++ compiler from stdenv
-    stdenv.cc
+		gcc
     # The Fortran compiler
     gfortran
     # HPC libraries needed for linking
@@ -62,7 +62,7 @@ stdenv.mkDerivation rec {
   # Instead of letting the Makefile guess, explicitly tell it which compilers to use.
   makeFlags = [
     # The C compiler
-    "CC=${stdenv.cc.cc}"
+    "CC=${gcc}/bin/gcc"
     # The Fortran compiler
     "FC=${gfortran}/bin/gfortran"
     # If the Makefile uses MPIFC or F77, do the same
