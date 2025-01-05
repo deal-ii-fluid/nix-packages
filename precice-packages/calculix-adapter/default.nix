@@ -5,23 +5,23 @@
   fetchzip,
   gcc,
 	gfortran,
-spooles,
-arpack,
-lapack,
-blas,
-libyamlcpp,
-precice,
-openmpi,
-pkg-config,
+  spooles,
+  arpack,
+  lapack,
+  blas,
+  libyamlcpp,
+  precice,
+  openmpi,
+  pkg-config,
 }:
 let
   ccx_version = "2.21";
   ccx = fetchzip {
     urls = [
-"https://www.dhondt.de/ccx_2.21.src.tar.bz2"
-"https://web.archive.org/web/20240302101853if_/https://www.dhondt.de/ccx_2.21.src.tar.bz2"
-];
-hash = "sha256-UqIO9yFsbi3nXq5GBTmRVkDjFA7EovYxqTAeAe2mBa0="
+      "https://www.dhondt.de/ccx_2.21.src.tar.bz2"
+      "https://web.archive.org/web/20240302101853if_/https://www.dhondt.de/ccx_2.21.src.tar.bz2"
+    ];
+    hash = "sha256-UqIO9yFsbi3nXq5GBTmRVkDjFA7EovYxqTAeAe2mBa0=";
   };
 in
 stdenv.mkDerivation rec {
@@ -32,7 +32,7 @@ stdenv.mkDerivation rec {
     owner = "jiaqiwang969";
     repo = pname;
 		rev = "v${version}";
-hash = "sha256-cBYbpXkKvTnJk1rFINAv1Mni9hfiD4hwrH0Ln2nz9RI="
+    hash = "sha256-cBYbpXkKvTnJk1rFINAv1Mni9hfiD4hwrH0Ln2nz9RI=";
   };
 
 
@@ -59,7 +59,7 @@ hash = "sha256-cBYbpXkKvTnJk1rFINAv1Mni9hfiD4hwrH0Ln2nz9RI="
 
     # 构建。可在此传 CC=mpicc 或者省略（因为 Makefile 已经设死 CC = mpicc）
     make -j \
-CCX=ccx_2.21/src \
+      CCX=ccx_2.21/src \
       CC=mpicc \
 			FC=mpifort \
       SPOOLES_INCLUDE="-I${spooles}/include/spooles/" \
@@ -74,7 +74,7 @@ CCX=ccx_2.21/src \
     mkdir -p $out/{bin,lib}
 
     cp bin/ccx_preCICE $out/bin
-cp bin/ccx_2.21.a $out/lib
+    cp bin/ccx_2.21.a $out/lib
   '';
 
   meta = {
