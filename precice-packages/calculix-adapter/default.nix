@@ -32,7 +32,7 @@ stdenv.mkDerivation rec {
     owner = "jiaqiwang969";
     repo = pname;
 		rev = "v${version}";
-    hash = "sha256-G4x58ZaUQ2B478j4GDQ+XUEK688Zjm3pxjqjCmuNZWQ=";
+    hash = "sha256-2JTomSTUnZAWuwcxoydp1EGHp/iz1ThCtQFF10pTgE8=";
   };
 
 
