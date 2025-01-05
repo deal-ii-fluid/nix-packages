@@ -1,5 +1,5 @@
 {
-  description = "Flake for the precice-Nix research project";
+  description = "Flake for the preCICE-Nix research project with Darwin + Linux support";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
@@ -7,7 +7,6 @@
       url = "github:nix-community/home-manager/release-23.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
     nixos-generators = {
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -21,24 +20,50 @@
     extra-trusted-public-keys = [ "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g=" ];
   };
 
-  # deadnix: skip
-  outputs =
-    {
-      self,
-      nixpkgs,
-      home-manager,
-      nixos-generators,
-    }:
+  outputs = { self, nixpkgs, home-manager, nixos-generators }:
     let
-      precice-system-light = {
+      # List all systems you want to support
+      supportedSystems = [
+        "x86_64-linux"
+        "aarch64-darwin"
+      ];
+
+      # Helper for iterating over systems in packages, devShells, apps, etc.
+      forAllSystems = f: builtins.listToAttrs (builtins.map (system: {
+        name = system; 
+        value = f system;
+      }) supportedSystems);
+
+      # Function to import nixpkgs + your overlay for each system
+      pkgsFor = system: import nixpkgs {
+        inherit system;
+        overlays = import ./precice-packages;
+        config.allowUnfree = true;
+        config.permittedInsecurePackages = [ "hdf5-1.10.9" ];
+      };
+
+      # Extract your overlay's package names
+      precicePackageNames = builtins.attrNames (
+        (builtins.elemAt (import ./precice-packages) 1) null { callPackage = { }; }
+      );
+
+      # Expand your overlay packages into an attrset { name = pkgs.name; } for each
+      preciceOverlayPackages = pkgs:
+        pkgs.lib.genAttrs precicePackageNames (name: pkgs.${name});
+
+      ################################################################################
+      # NixOS-only definitions (x86_64-linux)
+      ################################################################################
+      preciceSystemLight = {
         system = "x86_64-linux";
         modules = [
           home-manager.nixosModules.home-manager
           ./configuration-light.nix
         ];
       };
-      precice-system-virtualbox-light = precice-system-light // {
-        modules = precice-system-light.modules ++ [
+
+      preciceSystemVirtualboxLight = preciceSystemLight // {
+        modules = preciceSystemLight.modules ++ [
           {
             virtualbox = {
               memorySize = 2048;
@@ -46,20 +71,22 @@
               params = {
                 cpus = 2;
                 vram = 64;
-                graphicscontroller = "vmsvga"; # This is default
+                graphicscontroller = "vmsvga";
               };
             };
           }
         ];
       };
-      precice-system = {
+
+      preciceSystem = {
         system = "x86_64-linux";
         modules = [
           home-manager.nixosModules.home-manager
           ./configuration.nix
         ];
       };
-      precice-system-vm = {
+
+      preciceSystemVm = {
         system = "x86_64-linux";
         modules = [
           home-manager.nixosModules.home-manager
@@ -70,8 +97,9 @@
           }
         ];
       };
-      precice-system-virtualbox = precice-system // {
-        modules = precice-system.modules ++ [
+
+      preciceSystemVirtualbox = preciceSystem // {
+        modules = preciceSystem.modules ++ [
           {
             virtualbox = {
               memorySize = 2048;
@@ -79,74 +107,94 @@
               params = {
                 cpus = 2;
                 vram = 64;
-                graphicscontroller = "vmsvga"; # This is default
+                graphicscontroller = "vmsvga";
               };
             };
           }
         ];
       };
-      pkgs = import nixpkgs {
-        system = "x86_64-linux";
-        overlays = import ./precice-packages;
-        config.allowUnfree = true;
-        config.permittedInsecurePackages = [ "hdf5-1.10.9" ];
-      };
+    in rec {
+      ##############################################################################
+      # 1) nixosConfigurations (x86_64-linux only)
+      ##############################################################################
+      nixosConfigurations.precice-vm =
+        nixpkgs.lib.nixosSystem preciceSystem;
 
-      # This simply reads all defined names of the packages specified in the overlay, so it results in
-      # a list of package names: [ "blacs" "dealii" ... ]
-      precice-package-names = builtins.attrNames (
-        (builtins.elemAt (import ./precice-packages) 1) null { callPackage = { }; }
+      ##############################################################################
+      # 2) packages for all systems
+      #    - On x86_64-linux: provide iso, vm, vagrant images
+      #    - On Darwin: provide a basic set or placeholders
+      ##############################################################################
+      packages = forAllSystems (system:
+        let
+          pkgs = pkgsFor system;
+
+          # Base packages we always provide
+          basePackages =
+            { inherit (pkgs) precice; }
+            // preciceOverlayPackages pkgs;   # your overlayed packages
+        in
+        if system == "x86_64-linux" then
+          basePackages // {
+            iso = nixos-generators.nixosGenerate (preciceSystem // { format = "iso"; });
+            iso-light = nixos-generators.nixosGenerate (preciceSystemLight // { format = "iso"; });
+            vagrant-vbox-image = nixos-generators.nixosGenerate (
+              preciceSystemVirtualbox // { format = "vagrant-virtualbox"; }
+            );
+            vagrant-vbox-image-light = nixos-generators.nixosGenerate (
+              preciceSystemVirtualboxLight // { format = "vagrant-virtualbox"; }
+            );
+            vm = nixos-generators.nixosGenerate (preciceSystemVm // { format = "vm"; });
+            vm-light = nixos-generators.nixosGenerate (preciceSystemLight // { format = "vm"; });
+          }
+        else
+          # On Darwin, there's no NixOS, so no iso/vm to export.
+          # Provide only the base packages (no images).
+          basePackages
       );
 
-      # This expands "dealii" to `{ dealii = pkgs.dealii; }`
-      precice-packages = pkgs.lib.genAttrs precice-package-names (name: pkgs.${name});
-    in
-    rec {
-      # Access by running `nixos-rebuild --flake .#precice-vm build`
-      nixosConfigurations.precice-vm = nixpkgs.lib.nixosSystem precice-system;
-
-      # Access by running `nix build .#<attribute>`
-      packages.x86_64-linux =
-        {
-          # These are packages that are already available upstream.
-          # We simply re-expose them to allow for easy access by the nix tools.
-          inherit (pkgs) precice;
-        }
-        // precice-packages
-        // {
-          # Custom build packages for preCICE
-          iso = nixos-generators.nixosGenerate (precice-system // { format = "iso"; });
-          iso-light = nixos-generators.nixosGenerate (precice-system-light // { format = "iso"; });
-          vagrant-vbox-image = nixos-generators.nixosGenerate (
-            precice-system-virtualbox // { format = "vagrant-virtualbox"; }
-          );
-          vagrant-vbox-image-light = nixos-generators.nixosGenerate (
-            precice-system-virtualbox-light // { format = "vagrant-virtualbox"; }
-          );
-          vm = nixos-generators.nixosGenerate (precice-system-vm // { format = "vm"; });
-          vm-light = nixos-generators.nixosGenerate (precice-system-light // { format = "vm"; });
+      ##############################################################################
+      # 3) apps for all systems
+      #    - On x86_64-linux: runs the VM script
+      #    - On Darwin: show a placeholder message
+      ##############################################################################
+      apps = forAllSystems (system: {
+        default = {
+          type = "app";
+          program = if system == "x86_64-linux" then
+            "${self.packages.${system}.vm}/bin/run-precice-vm-vm"
+          else
+            ''
+            echo "Not supported on ${system}."
+            echo "You can still use `nix develop` or `nix shell` for packages."
+            exit 1
+            '';
         };
+      });
 
-      # Access by running `nix run`
-      apps.x86_64-linux.default = {
-        type = "app";
-        program = "${packages.x86_64-linux.vm}/bin/run-precice-vm-vm";
-      };
-
-      # Access by running `nix develop`
-      devShells.x86_64-linux.default = pkgs.mkShell {
-        buildInputs =
-          (import ./configuration.nix {
+      ##############################################################################
+      # 4) devShells for all systems
+      ##############################################################################
+      devShells = forAllSystems (system:
+        let
+          pkgs = pkgsFor system;
+          # Some environment logic from your config
+          systemPackages = import ./configuration.nix {
             inherit pkgs;
             inherit (nixpkgs) lib;
             config = null;
-          }).environment.systemPackages;
-
-        shellHook = ''
-          source ${pkgs.openfoam}/bin/set-openfoam-vars
-          source ${pkgs.precice-dune}/bin/set-dune-vars
-          export LD_LIBRARY_PATH=${pkgs.precice-openfoam-adapter}/lib:$LD_LIBRARY_PATH
-        '';
-      };
+          };
+        in
+          pkgs.mkShell {
+            buildInputs = systemPackages.environment.systemPackages;
+            shellHook = ''
+              # If these packages exist on Darwin, they might or might not work.
+              # If any break, consider conditionals: `if pkgs.stdenv.isDarwin then ...`
+              source ${pkgs.openfoam}/bin/set-openfoam-vars || true
+              source ${pkgs.precice-dune}/bin/set-dune-vars || true
+              export LD_LIBRARY_PATH=${pkgs.precice-openfoam-adapter}/lib:$LD_LIBRARY_PATH
+            '';
+          }
+      );
     };
 }
