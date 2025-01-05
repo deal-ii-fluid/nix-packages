@@ -6,6 +6,7 @@
   mpi,
   flex,
   zlib,
+	gcc
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -17,6 +18,7 @@ stdenv.mkDerivation (finalAttrs: {
     mpi
     flex
     zlib
+		gcc
   ];
 
   src = fetchFromGitLab {
