@@ -4,6 +4,7 @@
   fetchFromGitHub,
   fetchzip,
   gcc,
+	gfortran,
   pkg-config,
   arpack,
   lapack,
@@ -37,6 +38,7 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [
     gcc
+		gfortran
     pkg-config
     arpack
     lapack
@@ -47,6 +49,10 @@ stdenv.mkDerivation rec {
     openmpi
   ];
 
+
+
+
+
   buildPhase = ''
     # 确认 mpifort 来自 openmpi，可以正常使用
     mpifort --version
@@ -55,6 +61,7 @@ stdenv.mkDerivation rec {
     make -j \
       CCX=${ccx}/ccx_2.20/src \
       CC=mpicc \
+			FC=mpifort \
       SPOOLES_INCLUDE="-I${spooles}/include/spooles/" \
       ARPACK_INCLUDE="$(${pkg-config}/bin/pkg-config --cflags-only-I arpack lapack blas)" \
       ARPACK_LIBS="$(${pkg-config}/bin/pkg-config --libs arpack lapack blas)" \
