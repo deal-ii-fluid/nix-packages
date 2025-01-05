@@ -58,17 +58,6 @@ stdenv.mkDerivation rec {
   # propagatedBuildInputs, but typically the final binary is self-contained.
   buildInputs = [];
 
-  # This is similar to patchShebangs or other approach from openmpi
-  postPatch = ''
-    # If the Makefile references /usr/local/bin/gcc or something else:
-    substituteInPlace Makefile --replace "/usr/local/bin/gcc" "${stdenv.cc.cc}"
-    # If it references /usr/local/bin/gfortran or something else:
-    substituteInPlace Makefile --replace "/usr/local/bin/gfortran" "${gfortran}/bin/gfortran"
-
-    # If you need to fix absolute references to mpifort in the Makefile:
-    substituteInPlace Makefile --replace "mpifort" "${openmpi}/bin/mpifort"
-  '';
-
 
   # Instead of letting the Makefile guess, explicitly tell it which compilers to use.
   makeFlags = [
