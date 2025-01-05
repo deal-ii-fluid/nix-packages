@@ -38,7 +38,7 @@ stdenv.mkDerivation rec {
   };
 
   # Tools needed at build-time only
-  nativeBuildInputs = [
+  buildInputs = [
     # The C/C++ compiler from stdenv
 		gcc
     # The Fortran compiler
@@ -54,9 +54,6 @@ stdenv.mkDerivation rec {
     openmpi
   ];
 
-  # If you needed these at runtime, you'd put them in buildInputs or
-  # propagatedBuildInputs, but typically the final binary is self-contained.
-  buildInputs = [];
 
 
   # Instead of letting the Makefile guess, explicitly tell it which compilers to use.
