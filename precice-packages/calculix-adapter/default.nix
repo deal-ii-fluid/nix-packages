@@ -32,7 +32,7 @@ stdenv.mkDerivation rec {
     owner = "jiaqiwang969";
     repo = pname;
 		rev = "v${version}";
-    hash = "sha256-2JTomSTUnZAWuwcxoydp1EGHp/iz1ThCtQFF10pTgE8=";
+    hash = "sha256-gL30+BPzVZeHtN0ssk7721j8BnwBX0diTPrI7XgL1U4=";
   };
 
 
@@ -60,8 +60,8 @@ stdenv.mkDerivation rec {
     # 构建。可在此传 CC=mpicc 或者省略（因为 Makefile 已经设死 CC = mpicc）
     make -j \
       CCX=${ccx}/ccx_2.20/src \
-      CC=gcc \
-			FC=gfortran \
+      CC=mpicc \
+			FC=mpifort \
       SPOOLES_INCLUDE="-I${spooles}/include/spooles/" \
       ARPACK_INCLUDE="$(${pkg-config}/bin/pkg-config --cflags-only-I arpack lapack blas)" \
       ARPACK_LIBS="$(${pkg-config}/bin/pkg-config --libs arpack lapack blas)" \
