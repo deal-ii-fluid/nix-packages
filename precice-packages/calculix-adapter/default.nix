@@ -3,7 +3,6 @@
 , fetchFromGitHub
 , fetchzip
 , gcc
-, gfortran
 , pkg-config
 , arpack
 , lapack
@@ -12,24 +11,22 @@
 , libyamlcpp
 , precice
 , openmpi
-, substituteAll
 }:
-
 let
   ccx_version = "2.20";
   ccx = fetchzip {
     urls = [
       "https://www.dhondt.de/ccx_2.20.src.tar.bz2"
-      # Mirror fallback
       "https://web.archive.org/web/20240302101853if_/https://www.dhondt.de/ccx_2.20.src.tar.bz2"
     ];
-    sha256 = "sha256-bCmG+rcQDJrcwDci/WOAgjfbhy1vxdD+wnwRlt/ovKo=";
+    hash = "sha256-bCmG+rcQDJrcwDci/WOAgjfbhy1vxdD+wnwRlt/ovKo=";
   };
 in
 stdenv.mkDerivation rec {
   pname = "calculix-adapter";
   version = "${ccx_version}.0";
 
+  # The preCICE CalculiX Adapter source
   src = fetchFromGitHub {
     owner = "precice";
     repo = pname;
@@ -37,13 +34,9 @@ stdenv.mkDerivation rec {
     hash = "sha256-zyJ9VOpmjyBeettPWA3bFZIfyJuvs5D1nMxRcP5ySRY=";
   };
 
-  # Tools needed at build-time only
-  buildInputs = [
-    # The C/C++ compiler from stdenv
-		gcc
-    # The Fortran compiler
-    gfortran
-    # HPC libraries needed for linking
+  # Tools / libs needed at build time
+  nativeBuildInputs = [
+    gcc
     pkg-config
     arpack
     lapack
@@ -54,26 +47,34 @@ stdenv.mkDerivation rec {
     openmpi
   ];
 
+  # 1) If the Makefile or code references `/usr/local/bin/gcc`, you can remove it:
+  #    Substitute with "gcc" or the actual compiler from Nix if needed.
+  #    If your Makefile does NOT reference /usr/local/bin/gcc, you can skip this.
+  postPatch = ''
+    substituteInPlace Makefile --replace "/usr/local/bin/gcc" "gcc" || true
+    # If your Makefile references a hard-coded path to gfortran or mpifort, do similar replacements:
+    # substituteInPlace Makefile --replace "/usr/local/bin/gfortran" "gfortran" || true
+    # substituteInPlace Makefile --replace "/usr/local/bin/mpifort" "${openmpi}/bin/mpifort" || true
+  '';
 
-
-  # Instead of letting the Makefile guess, explicitly tell it which compilers to use.
-  makeFlags = [
-    # The C compiler
-    "CC=${gcc}/bin/gcc"
-    # The Fortran compiler
-    "FC=${gfortran}/bin/gfortran"
-    # If the Makefile uses MPIFC or F77, do the same
-    "MPIFC=${openmpi}/bin/mpifort"
-  ];
-
-
-  # We can echo which compilers are actually being used, for debugging
+  # 2) Force the correct compilers / MPI wrappers so the Makefile doesn't try to guess
+  #    a store path that might be a directory rather than a binary.
   buildPhase = ''
-	  echo "Build using CC=$CC FC=$FC MPIFC=$MPIFC PATH=$PATH"
+    echo "Build environment:"
+    echo "  CC=$CC"
+    echo "  FC=$FC"
+    echo "  PATH=$PATH"
 
+    # If you want to override the Makefile's default "CC", "FC", etc., you can export them:
+    export CC="${gcc}/bin/gcc"                    # or stdenv.cc.cc
+    export FC="${openmpi}/bin/mpifort"            # If the Fortran code is MPI-based
+    # or export FC="${gcc}/bin/gfortran" if your code uses raw gfortran
+
+    # Show which mpifort is being used
     mpifort --version || true
-    # Now run "make -j" with the relevant flags
-    make -j \
+
+    # The actual build
+    make -j $NIX_BUILD_CORES \
       CCX=${ccx}/ccx_2.20/src \
       SPOOLES_INCLUDE="-I${spooles}/include/spooles/" \
       ARPACK_INCLUDE="$(${pkg-config}/bin/pkg-config --cflags-only-I arpack lapack blas)" \
@@ -84,16 +85,17 @@ stdenv.mkDerivation rec {
   '';
 
   installPhase = ''
-    mkdir -p $out/{bin,lib}
-    cp bin/ccx_preCICE $out/bin/
-    cp bin/ccx_2.20.a $out/lib/
+    mkdir -p "$out/bin" "$out/lib"
+    cp bin/ccx_preCICE "$out/bin/"
+    cp bin/ccx_2.20.a "$out/lib/"
   '';
 
-  meta = with lib; {
+  meta = {
     description = "preCICE-adapter for the CSM code CalculiX";
     homepage = "https://precice.org/adapter-calculix-overview.html";
-    license = licenses.gpl3;
-    maintainers = [ maintainers.conni2461 ];
-    platforms = platforms.unix;
+    license = with lib.licenses; [ gpl3 ];
+    maintainers = with lib.maintainers; [ conni2461 ];
+    mainProgram = "ccx_preCICE";
+    platforms = lib.platforms.unix;
   };
 }
