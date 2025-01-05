@@ -28,11 +28,12 @@ stdenv.mkDerivation rec {
   version = "${ccx_version}.0";
 
   src = fetchFromGitHub {
-    owner = "precice";
+    owner = "jiaqiwang969";
     repo = pname;
-    rev = "v${version}";
-    hash = "sha256-zyJ9VOpmjyBeettPWA3bFZIfyJuvs5D1nMxRcP5ySRY=";
+    rev = "v1.0";
+    hash = "sha256-T7sif+GKtC8SMgdVPUyZTzvKHB/i86qQadnyCm+CohA=";
   };
+
 
   nativeBuildInputs = [
     gcc
@@ -47,10 +48,13 @@ stdenv.mkDerivation rec {
   ];
 
   buildPhase = ''
+    # 确认 mpifort 来自 openmpi，可以正常使用
     mpifort --version
+
+    # 构建。可在此传 CC=mpicc 或者省略（因为 Makefile 已经设死 CC = mpicc）
     make -j \
-		  CC=clang
       CCX=${ccx}/ccx_2.20/src \
+      CC=mpicc \
       SPOOLES_INCLUDE="-I${spooles}/include/spooles/" \
       ARPACK_INCLUDE="$(${pkg-config}/bin/pkg-config --cflags-only-I arpack lapack blas)" \
       ARPACK_LIBS="$(${pkg-config}/bin/pkg-config --libs arpack lapack blas)" \
