@@ -32,7 +32,7 @@ stdenv.mkDerivation rec {
     owner = "jiaqiwang969";
     repo = pname;
 		rev = "v${version}";
-    hash = "sha256-mYvywWnRqQsiLeVpcIKG8K4ilk3AnXPJpCgBJsPI1GI=";
+    hash = "sha256-cBYbpXkKvTnJk1rFINAv1Mni9hfiD4hwrH0Ln2nz9RI=";
   };
 
 
@@ -59,7 +59,7 @@ stdenv.mkDerivation rec {
 
     # 构建。可在此传 CC=mpicc 或者省略（因为 Makefile 已经设死 CC = mpicc）
     make -j \
-      CCX=${ccx}/ccx_2.21/src \
+      CCX=ccx_2.21/src \
       CC=mpicc \
 			FC=mpifort \
       SPOOLES_INCLUDE="-I${spooles}/include/spooles/" \
