@@ -30,7 +30,23 @@ stdenv.mkDerivation (finalAttrs: {
   preConfigure = ''
     cd src
     #ln -s Make.inc/Makefile.inc.x86-64_pc_linux2 Makefile.inc
-    cp Make.inc/Makefile.inc.x86-64_pc_linux2 Makefile.inc
+    #cp Make.inc/Makefile.inc.x86-64_pc_linux2 Makefile.inc
+
+    case "${stdenv.hostPlatform.system}" in
+      x86_64-linux)
+        cp Make.inc/Makefile.inc.x86-64_pc_linux2 Makefile.inc
+        ;;
+      aarch64-darwin)
+        cp Make.inc/Makefile.inc.i686_mac_darwin10 Makefile.inc
+        ;;
+      *)
+        echo "Unsupported platform: ${stdenv.hostPlatform.system}"
+        exit 1
+        ;;
+    esac
+
+
+
     # 启用共享库的构建
     sed -i 's/^LIB.*=.*/LIB       = .so/' Makefile.inc
     sed -i 's/^CCS.*=.*/CCS       = $(CC) -fPIC/' Makefile.inc
