@@ -68,6 +68,7 @@
     precice-fortran-solverdummy = super.callPackage ./precice-fortran-solverdummy { };
     scotch = super.callPackage ./scotch { };
 
+
     openfoam2206 = super.callPackage ./openfoam {
       version = "2206";
       hash = "sha256-snrFOsENf/siqFd1mzxAsYbw1ba67TXMgaNDpb26uX0=";
@@ -88,7 +89,7 @@
       version = "2406";
       hash = "sha256-vOXTZhZnTPqx7QDV7Me91MwEW40zquOifIF99l0yLZc=";
     };
-	  openfoamv9 = super.callPackage ./openfoam {
+    openfoamv9 = super.callPackage ./openfoam {
        version = "9";
        hash = "sha256-wcC6gcSrVqEsvP16002/pDNAZvZXBfoMiqvUisgMsFI=";
     };
