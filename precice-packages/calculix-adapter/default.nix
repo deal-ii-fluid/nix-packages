@@ -5,21 +5,21 @@
   fetchzip,
   gcc,
 	gfortran,
-  pkg-config,
+  spooles,
   arpack,
   lapack,
   blas,
-  spooles,
   libyamlcpp,
   precice,
   openmpi,
+  pkg-config,
 }:
 let
-  ccx_version = "2.20";
+  ccx_version = "2.21";
   ccx = fetchzip {
     urls = [
-      "https://www.dhondt.de/ccx_2.20.src.tar.bz2"
-      "https://web.archive.org/web/20240302101853if_/https://www.dhondt.de/ccx_2.20.src.tar.bz2"
+      "https://www.dhondt.de/ccx_2.21.src.tar.bz2"
+      "https://web.archive.org/web/20240302101853if_/https://www.dhondt.de/ccx_2.21.src.tar.bz2"
     ];
     hash = "sha256-bCmG+rcQDJrcwDci/WOAgjfbhy1vxdD+wnwRlt/ovKo=";
   };
@@ -32,7 +32,7 @@ stdenv.mkDerivation rec {
     owner = "jiaqiwang969";
     repo = pname;
 		rev = "v${version}";
-    hash = "sha256-jXaLDo4+PzybytS7fuEbvu4rijmIyw7WL4s1UGUccDU=";
+    hash = "sha256-mYvywWnRqQsiLeVpcIKG8K4ilk3AnXPJpCgBJsPI1GI=";
   };
 
 
@@ -59,7 +59,7 @@ stdenv.mkDerivation rec {
 
     # 构建。可在此传 CC=mpicc 或者省略（因为 Makefile 已经设死 CC = mpicc）
     make -j \
-      CCX=${ccx}/ccx_2.20/src \
+      CCX=${ccx}/ccx_2.21/src \
       CC=mpicc \
 			FC=mpifort \
       SPOOLES_INCLUDE="-I${spooles}/include/spooles/" \
